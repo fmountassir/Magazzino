@@ -134,7 +134,19 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 .preview-info{background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6}
 .abbina-row{padding:12px 0;border-bottom:1px solid var(--border)}
 .abbina-row:last-child{border-bottom:none}
-@media(max-width:700px){.sidebar{display:none}.content{padding:14px}.metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){
+  .sidebar{display:none;position:fixed;inset:0 auto 0 0;z-index:500;width:240px;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .sidebar.open{display:flex}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:499}
+  .sidebar-overlay.open{display:block}
+  .hamburger{display:flex !important}
+  .content{padding:14px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .topbar{padding:0 14px}
+  table{font-size:12px}
+  th,td{padding:8px 8px}
+}
+@media(min-width:701px){.hamburger{display:none}.sidebar-overlay{display:none}}
 </style>
 </head>
 <body>
@@ -224,9 +236,13 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="hamburger" onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;align-items:center" aria-label="Menu"><i class="ti ti-menu-2" style="font-size:22px;color:var(--text)"></i></button>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+      </div>
       <div class="topbar-actions" id="topbar-actions"></div>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="content">
 
       <!-- DASHBOARD -->
@@ -621,6 +637,25 @@ function resetAI(){selectedFile=null;righeData=[];document.getElementById('file-
 
 // ===== EXPORT EXCEL =====
 function exportExcel(){if(!window.XLSX){alert('Libreria non caricata.');return;}const wb=XLSX.utils.book_new();const scorte=db.materiali.map(m=>({'Codice':m.codice,'Nome':m.nome,'Tipo':m.tipo,'Posizione':locPath(m.locId)||'—','U.M.':m.um,'Giacenza':giacenza(m.id),'Fuori':fuoriMag(m.id),'Scorta min.':m.minimo,'Costo €':m.costo,'Valore €':(giacenza(m.id)*m.costo).toFixed(2),'Stato':giacenza(m.id)<=0?'Esaurito':giacenza(m.id)<m.minimo?'Sotto scorta':'OK'}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(scorte),'Scorte');const ubicSheet=db.ubicazioni.map(l=>({'Codice':l.codice,'Nome':l.nome,'Tipo':l.tipo,'Descrizione':l.desc||'','Percorso':locPath(l.id)}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ubicSheet),'Ubicazioni');const movSheet=[...db.movimenti].sort((a,b)=>b.data.localeCompare(a.data)).map(m=>{const mat=db.materiali.find(x=>x.id==m.matId);return{'Data':fmtDate(m.data),'Materiale':mat?mat.nome:'?','Tipo':m.tipo,'Qtà':m.qta,'Tecnico':m.tecnico||'','Cantiere':m.cantiere||'','Zona':m.zona||'','Stato':m.tipo==='uscita'?(m.rientrato?'Rientrato':'Fuori'):'—'};});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(movSheet),'Movimenti');const carSheet=[...db.carichi].sort((a,b)=>b.data.localeCompare(a.data)).map(c=>{const mat=db.materiali.find(m=>m.id==c.matId);return{'Data':fmtDate(c.data),'Materiale':mat?mat.nome:'?','Qtà':c.qta,'Costo/u':c.costo,'Totale':(c.qta*c.costo).toFixed(2),'Fornitore':c.fornitore||'','DDT':c.ddt||''};});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(carSheet),'Carichi');XLSX.writeFile(wb,'magazzino_elettrico_'+new Date().toLocaleDateString('it-IT').replace(/\//g,'-')+'.xlsx');}
+
+// ===== MOBILE MENU =====
+function toggleSidebar(){
+  const sb=document.querySelector(".sidebar");
+  const ov=document.getElementById("sidebar-overlay");
+  sb.classList.toggle("open");
+  ov.classList.toggle("open");
+}
+// Close sidebar on nav item click on mobile
+document.addEventListener("DOMContentLoaded",function(){
+  document.querySelectorAll(".nav-item").forEach(btn=>{
+    btn.addEventListener("click",function(){
+      if(window.innerWidth<=700){
+        document.querySelector(".sidebar").classList.remove("open");
+        document.getElementById("sidebar-overlay").classList.remove("open");
+      }
+    });
+  });
+});
 
 // ===== INIT =====
 load();renderDashboard();
