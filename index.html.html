@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magazzino Elettrico</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f9fa;--surface:#ffffff;--surface2:#f1f3f5;--border:#dee2e6;--border2:#ced4da;
+  --text:#212529;--text2:#495057;--text3:#868e96;
+  --blue:#1971c2;--blue-light:#e7f5ff;--blue-dark:#0C447C;
+  --green:#2f9e44;--green-light:#ebfbee;--green-dark:#27500A;
+  --amber:#e67700;--amber-light:#fff9db;
+  --red:#c92a2a;--red-light:#fff5f5;
+  --purple:#6741d9;--purple-light:#f3f0ff;
+  --teal:#0c8599;--teal-light:#e3fafc;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
+.app-wrapper{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-size:15px;font-weight:700;color:var(--blue);letter-spacing:-.3px}
+.sidebar-logo p{font-size:11px;color:var(--text3);margin-top:2px}
+.sidebar-nav{padding:10px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item i{font-size:16px;color:var(--text3);flex-shrink:0}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--blue-light);color:var(--blue)}
+.nav-item.active i{color:var(--blue)}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.content{padding:24px;flex:1;overflow-y:auto}
+.page{display:none}.page.active{display:block}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-primary:hover{background:#1864ab}
+.btn-success{background:var(--green);color:#fff;border-color:var(--green)}.btn-success:hover{background:#276f3a}
+.btn-ai{background:var(--purple);color:#fff;border-color:var(--purple)}.btn-ai:hover{background:#5f3dc4}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:6px;border-radius:var(--radius)}
+.btn-danger{color:var(--red);border-color:#ffc9c9}.btn-danger:hover{background:var(--red-light)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);margin-bottom:16px}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:600}
+.card-body{padding:18px}
+.card-body-0{padding:0}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:6px}
+.metric-value{font-size:26px;font-weight:700;line-height:1}
+.metric.blue .metric-value{color:var(--blue)}.metric.green .metric-value{color:var(--green)}
+.metric.amber .metric-value{color:var(--amber)}.metric.red .metric-value{color:var(--red)}
+.metric.purple .metric-value{color:var(--purple)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.b-consumabile{background:var(--blue-light);color:var(--blue-dark)}
+.b-strumento{background:var(--teal-light);color:var(--teal)}
+.b-uscita{background:var(--amber-light);color:var(--amber)}
+.b-rientro{background:var(--green-light);color:var(--green-dark)}
+.b-consumo{background:var(--red-light);color:var(--red)}
+.b-ok{background:var(--green-light);color:var(--green-dark)}
+.b-warn{background:var(--amber-light);color:var(--amber)}
+.b-alert{background:var(--red-light);color:var(--red)}
+.b-fuori{background:#fff0f6;color:#a61e4d}
+.b-loc{background:var(--purple-light);color:var(--purple)}
+.b-ai{background:var(--purple-light);color:var(--purple)}
+label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:12px}
+input,select,textarea{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);transition:border .15s}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(25,113,194,.12)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.form-grid .full{grid-column:1/-1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:min(580px,96vw);max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar input{flex:1;min-width:180px}
+.search-bar select{min-width:140px;width:auto}
+.empty-state{text-align:center;padding:40px 24px;color:var(--text3)}
+.empty-state i{font-size:36px;margin-bottom:10px;display:block;opacity:.4}
+.stock-bar{height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden}
+.stock-fill{height:3px;border-radius:2px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid var(--border);border-radius:99px;font-size:11px;color:var(--text3)}
+.loc-node{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface);margin-bottom:8px}
+.loc-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.loc-head-name{font-weight:600;font-size:13px;flex:1}
+.loc-items{padding:8px;display:flex;flex-direction:column;gap:4px}
+.loc-mat-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.loc-mat-name{flex:1;font-size:13px}
+.loc-children-wrap{padding:6px 8px;background:var(--bg);border-top:1px solid var(--border)}
+.config-banner{background:var(--amber-light);border:1px solid #ffd43b;border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px}
+.config-banner i{color:var(--amber);font-size:20px;flex-shrink:0;margin-top:1px}
+.config-banner p{font-size:13px;color:#664d03;line-height:1.5}
+.config-banner code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px;font-size:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot-green{background:var(--green)}.dot-amber{background:var(--amber)}.dot-red{background:var(--red)}
+/* ---- CARICO AI ---- */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:9px 18px;font-size:13px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text3);font-family:inherit;margin-bottom:-1px;transition:all .15s}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-btn:hover{color:var(--text)}
+.tab-content{display:none}.tab-content.active{display:block}
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--blue);background:var(--blue-light)}
+.drop-zone i{font-size:40px;color:var(--text3);display:block;margin-bottom:12px}
+.drop-zone.drag-over i{color:var(--blue)}
+.ai-step{display:none}.ai-step.active{display:block}
+.progress-steps{display:flex;gap:0;margin-bottom:1.5rem}
+.pstep{flex:1;text-align:center;font-size:12px;padding:8px 4px;color:var(--text3);border-bottom:2px solid var(--border);font-family:inherit}
+.pstep.done{color:var(--green);border-color:var(--green)}
+.pstep.active{color:var(--blue);font-weight:600;border-color:var(--blue)}
+.spinner{display:inline-block;width:20px;height:20px;border:2.5px solid #b5d4f4;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.riga-mat-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
+.riga-mat-row:last-child{border-bottom:none}
+.riga-mat-row input{padding:5px 8px;font-size:12px}
+.alert-info{background:var(--blue-light);border:1px solid #b5d4f4;color:var(--blue-dark);border-radius:var(--radius);padding:10px 14px;font-size:13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px}
+.alert-warn{background:var(--amber-light);border:1px solid #ffd43b;color:#664d03;border-radius:var(--radius);padding:10px 14px;font-size:13px;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px}
+.preview-info{background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6}
+.abbina-row{padding:12px 0;border-bottom:1px solid var(--border)}
+.abbina-row:last-child{border-bottom:none}
+@media(max-width:700px){.sidebar{display:none}.content{padding:14px}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ===== MODALS ===== -->
+<div id="modal-loc" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Aggiungi ubicazione</span><button class="btn btn-sm btn-icon" onclick="closeModal('modal-loc')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="full"><label>Tipo</label><select id="loc-tipo"><option value="zona">Zona / Area</option><option value="scaffale">Scaffale</option><option value="cassettiera">Cassettiera</option><option value="contenitore">Contenitore / Cassetto</option><option value="altro">Altro</option></select></div>
+        <div class="full"><label>Contenuto in (facoltativo)</label><select id="loc-parent"><option value="">— Livello radice —</option></select></div>
+        <div><label>Codice / Etichetta</label><input type="text" id="loc-codice" placeholder="es. SC-01"></div>
+        <div class="full"><label>Nome</label><input type="text" id="loc-nome" placeholder="es. Scaffale principale cavi"></div>
+        <div class="full"><label>Descrizione</label><input type="text" id="loc-desc" placeholder="es. Ripiano 2, lato sinistro"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('modal-loc')">Annulla</button><button class="btn btn-primary" onclick="salvaLoc()">Salva</button></div>
+  </div>
+</div>
+
+<div id="modal-mat" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Nuovo materiale</span><button class="btn btn-sm btn-icon" onclick="closeModal('modal-mat')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div><label>Codice</label><input type="text" id="nm-codice" placeholder="es. CAV-001"></div>
+        <div><label>Tipo</label><select id="nm-tipo"><option value="consumabile">Consumabile</option><option value="strumento">Strumento</option></select></div>
+        <div class="full"><label>Nome / Descrizione</label><input type="text" id="nm-nome" placeholder="es. Cavo FG7OR 3x2.5mm²"></div>
+        <div class="full"><label>Posizione in magazzino</label><select id="nm-loc"><option value="">— Nessuna posizione —</option></select></div>
+        <div><label>Unità di misura</label><input type="text" id="nm-um" value="pz"></div>
+        <div><label>Costo unitario (€)</label><input type="number" id="nm-costo" min="0" step="0.01" value="0"></div>
+        <div><label>Scorta minima</label><input type="number" id="nm-minimo" min="0" value="5"></div>
+        <div class="full"><label>Note / Specifiche</label><input type="text" id="nm-note" placeholder="Marca, modello, ecc."></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('modal-mat')">Annulla</button><button class="btn btn-primary" onclick="salvaMateriale()">Salva</button></div>
+  </div>
+</div>
+
+<div id="modal-rientro" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Registra rientro</span><button class="btn btn-sm btn-icon" onclick="closeModal('modal-rientro')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div id="rientro-info" style="background:var(--surface2);border-radius:var(--radius);padding:12px;font-size:13px;margin-bottom:4px;line-height:1.6"></div>
+      <label>Quantità che rientra</label><input type="number" id="rientro-qta" min="1" value="1">
+      <label>Note</label><input type="text" id="rientro-note" placeholder="Condizioni, anomalie...">
+      <input type="hidden" id="rientro-mov-id">
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('modal-rientro')">Annulla</button><button class="btn btn-primary" onclick="salvaRientro()">Conferma rientro</button></div>
+  </div>
+</div>
+
+<div id="modal-edit-pos" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Modifica posizione</span><button class="btn btn-sm btn-icon" onclick="closeModal('modal-edit-pos')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div id="edit-pos-name" style="font-weight:600;margin-bottom:8px"></div>
+      <label>Nuova posizione</label><select id="edit-pos-loc"></select>
+      <input type="hidden" id="edit-pos-mat-id">
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('modal-edit-pos')">Annulla</button><button class="btn btn-primary" onclick="salvaEditPos()">Salva</button></div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="app-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1><i class="ti ti-bolt"></i> MagElettrico</h1>
+      <p>Gestionale magazzino</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+      <button class="nav-item" onclick="showPage('cerca')"><i class="ti ti-search"></i> Cerca materiale</button>
+      <button class="nav-item" onclick="showPage('ubicazioni')"><i class="ti ti-building-warehouse"></i> Ubicazioni</button>
+      <button class="nav-item" onclick="showPage('materiali')"><i class="ti ti-package"></i> Materiali</button>
+      <button class="nav-item" onclick="showPage('carico')"><i class="ti ti-circle-plus"></i> Carico</button>
+      <button class="nav-item" onclick="showPage('movimenti')"><i class="ti ti-arrows-exchange"></i> Movimenti</button>
+      <button class="nav-item" onclick="showPage('uscita')"><i class="ti ti-arrow-bar-right"></i> Nuova uscita</button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-success" style="width:100%;justify-content:center" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Esporta Excel</button>
+      <div id="sync-status" style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px"><span class="status-dot dot-amber"></span>Non connesso a Sheets</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div id="config-banner-wrap"></div>
+        <div class="metrics" id="metrics-box"></div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Situazione scorte</span></div>
+          <div class="card-body-0"><table><thead><tr><th>Materiale</th><th>Tipo</th><th>Posizione</th><th>Giacenza</th><th>Fuori</th><th>Stato</th></tr></thead><tbody id="dash-tbody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Ultimi movimenti</span></div>
+          <div class="card-body-0"><table><thead><tr><th>Data</th><th>Materiale</th><th>Tipo</th><th>Qtà</th><th>Tecnico</th><th>Destinazione</th></tr></thead><tbody id="last-mov-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CERCA -->
+      <div id="page-cerca" class="page">
+        <div style="margin-bottom:16px"><input type="text" id="cerca-input" placeholder="Scrivi nome, codice o posizione..." oninput="renderCerca()" style="font-size:15px;padding:12px 16px"></div>
+        <div id="cerca-results"></div>
+      </div>
+
+      <!-- UBICAZIONI -->
+      <div id="page-ubicazioni" class="page">
+        <div id="loc-tree"></div>
+      </div>
+
+      <!-- MATERIALI -->
+      <div id="page-materiali" class="page">
+        <div class="search-bar">
+          <input type="text" id="search-mat" placeholder="Cerca..." oninput="renderMateriali()">
+          <select id="filter-tipo" onchange="renderMateriali()"><option value="">Tutti i tipi</option><option value="consumabile">Consumabile</option><option value="strumento">Strumento</option></select>
+          <select id="filter-loc" onchange="renderMateriali()"><option value="">Tutte le posizioni</option></select>
+        </div>
+        <div class="card card-body-0"><table><thead><tr><th>Codice</th><th>Nome</th><th>Tipo</th><th>Posizione</th><th>U.M.</th><th>Costo</th><th>Min.</th><th></th></tr></thead><tbody id="mat-tbody"></tbody></table></div>
+      </div>
+
+      <!-- CARICO -->
+      <div id="page-carico" class="page">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('tab-ai')" id="tbtn-ai"><i class="ti ti-sparkles" style="font-size:14px"></i> Importa da fattura/DDT</button>
+          <button class="tab-btn" onclick="switchTab('tab-manuale')" id="tbtn-manuale"><i class="ti ti-edit" style="font-size:14px"></i> Inserimento manuale</button>
+        </div>
+
+        <!-- TAB AI -->
+        <div id="tab-ai" class="tab-content active">
+          <div class="progress-steps" id="ai-progress">
+            <div class="pstep active" id="ps1">1. Carica documento</div>
+            <div class="pstep" id="ps2">2. Lettura AI</div>
+            <div class="pstep" id="ps3">3. Verifica dati</div>
+            <div class="pstep" id="ps4">4. Abbina e conferma</div>
+          </div>
+
+          <!-- STEP 1 -->
+          <div class="ai-step active" id="aistep1">
+            <div class="drop-zone" id="dropzone" onclick="document.getElementById('fileInput').click()" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+              <i class="ti ti-file-upload"></i>
+              <div style="font-size:14px;color:var(--text2);margin-bottom:4px">Trascina qui la fattura o DDT</div>
+              <div style="font-size:12px;color:var(--text3)">oppure clicca per scegliere il file</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:6px">PDF &middot; JPG &middot; PNG &middot; WEBP</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" onchange="onFileSelect(event)">
+            <div id="file-preview-wrap" style="margin-top:12px"></div>
+            <div id="step1-actions" style="display:none;justify-content:flex-end;gap:8px;margin-top:12px">
+              <button class="btn" onclick="resetAI()">Annulla</button>
+              <button class="btn btn-ai" onclick="startAnalysis()"><i class="ti ti-sparkles"></i> Analizza con AI</button>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="ai-step" id="aistep2">
+            <div class="card"><div class="card-body" style="text-align:center;padding:3rem">
+              <div><span class="spinner"></span><span id="loading-msg" style="font-size:14px;color:var(--text2)">Lettura documento in corso...</span></div>
+              <div style="font-size:12px;color:var(--text3);margin-top:12px">L'AI sta estraendo fornitore, articoli, quantità e prezzi</div>
+            </div></div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="ai-step" id="aistep3">
+            <div id="ai-extracted-summary" class="preview-info"></div>
+            <div id="ai-warn" style="display:none"></div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Dati documento</span></div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div><label>Fornitore</label><input type="text" id="r-fornitore"></div>
+                  <div><label>N° Fattura / DDT</label><input type="text" id="r-ddt"></div>
+                  <div><label>Data documento</label><input type="text" id="r-data-doc"></div>
+                  <div><label>Tipo documento</label><select id="r-tipo-doc"><option value="DDT">DDT</option><option value="Fattura">Fattura</option><option value="Ordine">Ordine</option></select></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Righe materiale</span>
+                <button class="btn btn-sm" onclick="addRiga()"><i class="ti ti-plus"></i> Aggiungi</button>
+              </div>
+              <div>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">
+                  <div>Descrizione</div><div>Qtà</div><div>U.M.</div><div>Prezzo/u €</div><div></div>
+                </div>
+                <div id="righe-container"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="goAIStep(1)"><i class="ti ti-arrow-left"></i> Ricarica</button>
+              <button class="btn btn-primary" onclick="goAIStep(4)">Continua <i class="ti ti-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- STEP 4 -->
+          <div class="ai-step" id="aistep4">
+            <div id="confirm-info" class="preview-info"></div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Abbina al catalogo</span></div>
+              <div class="card-body">
+                <div class="alert-info"><i class="ti ti-info-circle"></i><div>Per ogni riga, abbina a un materiale già in catalogo oppure creane uno nuovo.</div></div>
+                <div id="abbinamento-container"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="goAIStep(3)"><i class="ti ti-arrow-left"></i> Indietro</button>
+              <button class="btn btn-success" onclick="confermaCaricoAI()"><i class="ti ti-check"></i> Conferma e registra carico</button>
+            </div>
+          </div>
+
+          <!-- STEP 5 SUCCESS -->
+          <div class="ai-step" id="aistep5">
+            <div class="card"><div class="card-body" style="text-align:center;padding:3rem">
+              <i class="ti ti-circle-check" style="font-size:52px;color:var(--green);display:block;margin-bottom:16px"></i>
+              <div style="font-size:16px;font-weight:600;margin-bottom:8px">Carico registrato!</div>
+              <div id="success-summary" style="font-size:13px;color:var(--text3);margin-bottom:24px"></div>
+              <div style="display:flex;gap:8px;justify-content:center">
+                <button class="btn btn-primary" onclick="resetAI()"><i class="ti ti-plus"></i> Nuovo documento</button>
+                <button class="btn" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+              </div>
+            </div></div>
+          </div>
+        </div><!-- /tab-ai -->
+
+        <!-- TAB MANUALE -->
+        <div id="tab-manuale" class="tab-content">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Registra carico manuale</span></div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="full"><label>Materiale</label><select id="carico-mat"></select></div>
+                <div><label>Quantità</label><input type="number" id="carico-qta" min="1" value="1"></div>
+                <div><label>Costo unitario (€)</label><input type="number" id="carico-costo" min="0" step="0.01" placeholder="Default dal materiale"></div>
+                <div><label>Fornitore</label><input type="text" id="carico-fornitore"></div>
+                <div><label>N° DDT / Fattura</label><input type="text" id="carico-ddt"></div>
+                <div class="full"><label>Note</label><input type="text" id="carico-note"></div>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                <button class="btn" onclick="resetCarico()">Annulla</button>
+                <button class="btn btn-primary" onclick="salvaCarico()"><i class="ti ti-check"></i> Conferma carico</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Storico carichi</span></div>
+            <div class="card-body-0"><table><thead><tr><th>Data</th><th>Materiale</th><th>Qtà</th><th>Costo/u</th><th>Totale</th><th>Fornitore</th><th>DDT</th></tr></thead><tbody id="carichi-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOVIMENTI -->
+      <div id="page-movimenti" class="page">
+        <div class="search-bar">
+          <input type="text" id="search-mov" placeholder="Cerca per materiale, tecnico, cantiere..." oninput="renderMovimenti()">
+          <select id="filter-mov-tipo" onchange="renderMovimenti()"><option value="">Tutti</option><option value="uscita">Uscite</option><option value="rientro">Rientri</option><option value="consumo">Consumi</option></select>
+        </div>
+        <div class="card card-body-0"><table><thead><tr><th>Data</th><th>Materiale</th><th>Tipo</th><th>Qtà</th><th>Tecnico</th><th>Cantiere</th><th>Zona</th><th>Stato</th><th></th></tr></thead><tbody id="mov-tbody"></tbody></table></div>
+      </div>
+
+      <!-- USCITA -->
+      <div id="page-uscita" class="page">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Registra uscita materiale</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="full"><label>Materiale</label><select id="usc-mat" onchange="onUscitaMatChange()"></select></div>
+              <div id="usc-tipo-box" style="display:none"><label>Tipo movimento</label><select id="usc-tipo"><option value="uscita">Uscita (ritorna)</option><option value="consumo">Consumo (non ritorna)</option></select></div>
+              <div><label>Quantità</label><input type="number" id="usc-qta" min="1" value="1"></div>
+              <div><label>Tecnico</label><input type="text" id="usc-tecnico"></div>
+              <div><label>Cantiere / Lavoro</label><input type="text" id="usc-cantiere"></div>
+              <div><label>Piano / Zona</label><input type="text" id="usc-zona"></div>
+              <div class="full"><label>Note</label><input type="text" id="usc-note"></div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+              <button class="btn" onclick="resetUscita()">Annulla</button>
+              <button class="btn btn-primary" onclick="salvaUscita()"><i class="ti ti-arrow-bar-right"></i> Registra uscita</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Strumenti fuori magazzino</span></div>
+          <div class="card-body-0"><table><thead><tr><th>Materiale</th><th>Posizione</th><th>Qtà</th><th>Tecnico</th><th>Cantiere</th><th>Data uscita</th><th></th></tr></thead><tbody id="fuori-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURAZIONE — sostituisci con l'URL del tuo Apps Script
+// ============================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywx7Z8uCTMT2L1cAIK-UBB56G22b-lWCTlbCFKKcZkUNLnSEk-h4rCrDTN0ZuEBXjR/exec';
+// ============================================================
+
+const KEY='mgz_elettrico_v2';
+let db={materiali:[],movimenti:[],carichi:[],ubicazioni:[],nextId:1};
+let useSheets=APPS_SCRIPT_URL!=='INSERISCI_QUI_URL_APPS_SCRIPT';
+
+function load(){try{const s=localStorage.getItem(KEY);if(s)db=JSON.parse(s);}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}}
+function uid(){return db.nextId++;}
+function now(){return new Date().toISOString();}
+function fmtDate(iso){const d=new Date(iso);return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});}
+function fmtEur(v){return(parseFloat(v)||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'€';}
+function giacenza(id){let g=0;db.carichi.filter(c=>c.matId==id).forEach(c=>g+=parseInt(c.qta)||0);db.movimenti.filter(m=>m.matId==id).forEach(m=>{if(m.tipo==='uscita'||m.tipo==='consumo')g-=parseInt(m.qta)||0;if(m.tipo==='rientro')g+=parseInt(m.qta)||0;});return Math.max(0,g);}
+function fuoriMag(id){let f=0;db.movimenti.filter(m=>m.matId==id&&m.tipo==='uscita'&&!m.rientrato).forEach(m=>f+=parseInt(m.qta)||0);return f;}
+function locPath(lid){if(!lid)return'';const l=db.ubicazioni.find(x=>x.id==lid);if(!l)return'';if(l.parentId){const p=locPath(l.parentId);return p?p+' › '+l.nome:l.nome;}return l.nome;}
+function allLocFlat(){function flat(n,pfx){let r=[];n.forEach(x=>{const lbl=pfx?pfx+' › '+x.nome:x.nome;r.push({id:x.id,label:lbl});r=r.concat(flat(db.ubicazioni.filter(c=>c.parentId==x.id),lbl));});return r;}return flat(db.ubicazioni.filter(l=>!l.parentId),'');}
+function locIconClass(t){return{zona:'ti-building-warehouse',scaffale:'ti-server',cassettiera:'ti-tool',contenitore:'ti-box',altro:'ti-map-pin'}[t]||'ti-map-pin';}
+
+// ---- SHEETS ----
+async function sheetsPost(action,sheet,data,id){if(!useSheets)return;try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action,sheet,data,id})});}catch(e){}}
+async function syncAll(){if(!useSheets)return;const st=document.getElementById('sync-status');st.innerHTML='<span class="status-dot dot-amber"></span>Sincronizzando...';try{const[a,b,c,d]=await Promise.all(['Materiali','Ubicazioni','Movimenti','Carichi'].map(s=>fetch(APPS_SCRIPT_URL+'?sheet='+s).then(r=>r.json())));if(a)db.materiali=a.map(r=>({...r,id:parseInt(r.id)||r.id,locId:r.locId?parseInt(r.locId):null,costo:parseFloat(r.costo)||0,minimo:parseInt(r.minimo)||0}));if(b)db.ubicazioni=b.map(r=>({...r,id:parseInt(r.id)||r.id,parentId:r.parentId?parseInt(r.parentId):null}));if(c)db.movimenti=c.map(r=>({...r,id:parseInt(r.id)||r.id,matId:parseInt(r.matId)||r.matId,qta:parseInt(r.qta)||0,rientrato:r.rientrato==='TRUE'||r.rientrato===true}));if(d)db.carichi=d.map(r=>({...r,id:parseInt(r.id)||r.id,matId:parseInt(r.matId)||r.matId,qta:parseInt(r.qta)||0,costo:parseFloat(r.costo)||0}));st.innerHTML='<span class="status-dot dot-green"></span>Sincronizzato';renderCurrent();}catch(e){st.innerHTML='<span class="status-dot dot-red"></span>Errore connessione';}}
+
+// ---- NAV ----
+let currentPage='dashboard';
+const pageTitles={dashboard:'Dashboard',cerca:'Cerca materiale',ubicazioni:'Ubicazioni',materiali:'Materiali',carico:'Carico',movimenti:'Movimenti',uscita:'Nuova uscita'};
+const pageActions={ubicazioni:'<button class="btn btn-primary" onclick="openLocModal()"><i class="ti ti-plus"></i> Aggiungi ubicazione</button>',materiali:'<button class="btn btn-primary" onclick="openMatModal()"><i class="ti ti-plus"></i> Aggiungi materiale</button>',movimenti:'<button class="btn btn-success" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Esporta Excel</button>'};
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');const idx=['dashboard','cerca','ubicazioni','materiali','carico','movimenti','uscita'].indexOf(id);document.querySelectorAll('.nav-item')[idx].classList.add('active');document.getElementById('topbar-title').textContent=pageTitles[id]||id;document.getElementById('topbar-actions').innerHTML=pageActions[id]||'';currentPage=id;render(id);}
+function renderCurrent(){render(currentPage);}
+function render(p){if(p==='dashboard')renderDashboard();if(p==='cerca')renderCerca();if(p==='ubicazioni')renderUbicazioni();if(p==='materiali')renderMateriali();if(p==='carico')renderCarico();if(p==='movimenti')renderMovimenti();if(p==='uscita')renderUscita();}
+
+// ---- TAB ----
+function switchTab(id){['tab-ai','tab-manuale'].forEach(t=>{document.getElementById(t).classList.toggle('active',t===id);});['tbtn-ai','tbtn-manuale'].forEach(b=>{document.getElementById(b).classList.toggle('active',b==='tbtn-'+id.split('-')[1]);});}
+
+// ---- DASHBOARD ----
+function renderDashboard(){
+  const bnr=document.getElementById('config-banner-wrap');
+  if(APPS_SCRIPT_URL==='INSERISCI_QUI_URL_APPS_SCRIPT')bnr.innerHTML='<div class="config-banner"><i class="ti ti-alert-triangle"></i><p><strong>Configurazione necessaria:</strong> Per salvare su Google Sheets condiviso, apri il file HTML in un editor, trova <code>const APPS_SCRIPT_URL = \'INSERISCI_QUI_URL_APPS_SCRIPT\'</code> e sostituisci con l\'URL del tuo Apps Script.</p></div>';
+  else bnr.innerHTML='';
+  const alert=db.materiali.filter(m=>giacenza(m.id)<m.minimo).length;
+  const fuori=db.movimenti.filter(m=>m.tipo==='uscita'&&!m.rientrato).length;
+  const totVal=db.materiali.reduce((s,m)=>s+giacenza(m.id)*m.costo,0);
+  document.getElementById('metrics-box').innerHTML=`<div class="metric blue"><div class="metric-label">Materiali</div><div class="metric-value">${db.materiali.length}</div></div><div class="metric purple"><div class="metric-label">Ubicazioni</div><div class="metric-value">${db.ubicazioni.length}</div></div><div class="metric amber"><div class="metric-label">Uscite aperte</div><div class="metric-value">${fuori}</div></div><div class="metric red"><div class="metric-label">Sotto scorta</div><div class="metric-value">${alert}</div></div><div class="metric green"><div class="metric-label">Valore magazzino</div><div class="metric-value" style="font-size:18px">${fmtEur(totVal)}</div></div>`;
+  const tb=document.getElementById('dash-tbody');
+  if(!db.materiali.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><i class="ti ti-package"></i><p>Nessun materiale. Vai su Materiali per aggiungerne.</p></div></td></tr>';return;}
+  tb.innerHTML=db.materiali.map(m=>{const g=giacenza(m.id),f=fuoriMag(m.id),pct=m.minimo>0?Math.min(100,Math.round(g/m.minimo*100)):100,stato=g<=0?'<span class="badge b-alert">Esaurito</span>':g<m.minimo?'<span class="badge b-warn">Sotto scorta</span>':'<span class="badge b-ok">OK</span>';const pos=m.locId?`<span class="badge b-loc"><i class="ti ti-map-pin" style="font-size:10px"></i> ${locPath(m.locId)}</span>`:'<span style="color:var(--text3);font-size:12px">—</span>';return`<tr><td><strong>${m.nome}</strong><br><span style="color:var(--text3);font-size:11px">${m.codice}</span><div class="stock-bar"><div class="stock-fill" style="width:${pct}%;background:${g<=0?'var(--red)':g<m.minimo?'var(--amber)':'var(--green)'}"></div></div></td><td><span class="badge b-${m.tipo}">${m.tipo}</span></td><td>${pos}</td><td><strong>${g}</strong> ${m.um}</td><td>${f>0?`<span class="badge b-fuori">${f}</span>`:'—'}</td><td>${stato}</td></tr>`;}).join('');
+  const lm=document.getElementById('last-mov-tbody');
+  const ul=[...db.movimenti].sort((a,b)=>b.data.localeCompare(a.data)).slice(0,8);
+  if(!ul.length){lm.innerHTML='<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3)">Nessun movimento.</td></tr>';return;}
+  lm.innerHTML=ul.map(m=>{const mat=db.materiali.find(x=>x.id==m.matId);return`<tr><td style="white-space:nowrap;font-size:12px">${fmtDate(m.data)}</td><td>${mat?mat.nome:'?'}</td><td><span class="badge b-${m.tipo}">${m.tipo}</span></td><td>${m.qta}</td><td>${m.tecnico||'—'}</td><td>${[m.cantiere,m.zona].filter(Boolean).join(' / ')||'—'}</td></tr>`;}).join('');
+}
+
+// ---- CERCA ----
+function renderCerca(){const q=(document.getElementById('cerca-input')||{value:''}).value.toLowerCase().trim();const res=document.getElementById('cerca-results');if(!q){res.innerHTML='<p style="color:var(--text3);font-size:13px">Inizia a digitare per trovare il materiale e la sua posizione nel magazzino.</p>';return;}const found=db.materiali.filter(m=>m.nome.toLowerCase().includes(q)||m.codice.toLowerCase().includes(q)||locPath(m.locId).toLowerCase().includes(q)||(m.note||'').toLowerCase().includes(q));if(!found.length){res.innerHTML='<div class="card"><div class="card-body"><div class="empty-state"><i class="ti ti-search-off"></i><p>Nessun risultato per "'+q+'"</p></div></div></div>';return;}res.innerHTML=found.map(m=>{const g=giacenza(m.id),f=fuoriMag(m.id),pos=m.locId?locPath(m.locId):'Posizione non assegnata',stato=g<=0?'<span class="badge b-alert">Esaurito</span>':g<m.minimo?'<span class="badge b-warn">Sotto scorta</span>':'<span class="badge b-ok">OK</span>';return`<div class="card" style="margin-bottom:12px"><div class="card-body" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700">${m.nome}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${m.codice} · <span class="badge b-${m.tipo}">${m.tipo}</span></div>${m.locId?`<div style="margin-top:8px;font-size:13px;color:var(--purple);font-weight:600"><i class="ti ti-map-pin"></i> ${pos}</div>`:`<div style="margin-top:6px;font-size:12px;color:var(--text3)">Posizione non assegnata</div>`}${m.note?`<div style="font-size:12px;color:var(--text3);margin-top:4px">${m.note}</div>`:''}</div><div style="text-align:right;flex-shrink:0">${stato}<div style="font-size:24px;font-weight:700;margin-top:6px">${g} <span style="font-size:13px;font-weight:400;color:var(--text3)">${m.um}</span></div>${f>0?`<div style="font-size:12px;color:var(--amber);margin-top:2px">${f} fuori magazzino</div>`:''}<div style="font-size:12px;color:var(--text3);margin-top:2px">Valore: ${fmtEur(g*m.costo)}</div></div></div></div>`;}).join('');}
+
+// ---- UBICAZIONI ----
+function renderUbicazioni(){const con=document.getElementById('loc-tree');if(!db.ubicazioni.length){con.innerHTML='<div class="card"><div class="card-body"><div class="empty-state"><i class="ti ti-building-warehouse"></i><p>Nessuna ubicazione. Clicca "Aggiungi ubicazione".</p></div></div></div>';return;}con.innerHTML=db.ubicazioni.filter(l=>!l.parentId).map(r=>renderLocNode(r)).join('');}
+function renderLocNode(loc){const ch=db.ubicazioni.filter(l=>l.parentId==loc.id),mats=db.materiali.filter(m=>m.locId==loc.id),tot=mats.length+ch.reduce((s,c)=>s+db.materiali.filter(m=>m.locId==c.id).length,0);return`<div class="loc-node"><div class="loc-head"><i class="ti ${locIconClass(loc.tipo)}" style="font-size:16px;color:var(--text3)"></i><div class="loc-head-name">${loc.codice?`<span class="chip" style="margin-right:6px">${loc.codice}</span>`:''}${loc.nome}${loc.desc?`<span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px">${loc.desc}</span>`:''}</div>${tot>0?`<span class="badge b-loc">${tot} mat.</span>`:''}<button class="btn btn-sm btn-icon btn-danger" onclick="elimLoc(${loc.id})"><i class="ti ti-trash"></i></button></div>${mats.length?`<div class="loc-items">${mats.map(m=>{const g=giacenza(m.id);return`<div class="loc-mat-row"><i class="ti ${m.tipo==='strumento'?'ti-tool':'ti-package'}" style="font-size:14px;color:var(--text3)"></i><span class="loc-mat-name">${m.nome} <span style="color:var(--text3);font-size:11px">${m.codice}</span></span><span style="font-size:13px;font-weight:600">${g} ${m.um}</span>${g<m.minimo?'<span class="badge b-warn" style="font-size:10px">scorta bassa</span>':''}</div>`;}).join('')}</div>`:''} ${ch.length?`<div class="loc-children-wrap">${ch.map(c=>renderLocNode(c)).join('')}</div>`:''}</div>`;}
+
+// ---- MATERIALI ----
+function renderMateriali(){populateLocSelect('filter-loc',true);const q=(document.getElementById('search-mat')||{value:''}).value.toLowerCase(),tf=(document.getElementById('filter-tipo')||{value:''}).value,lf=(document.getElementById('filter-loc')||{value:''}).value;const list=db.materiali.filter(m=>{if(tf&&m.tipo!==tf)return false;if(lf&&String(m.locId)!==lf)return false;if(q&&!m.nome.toLowerCase().includes(q)&&!m.codice.toLowerCase().includes(q)&&!locPath(m.locId).toLowerCase().includes(q))return false;return true;});const tb=document.getElementById('mat-tbody');if(!list.length){tb.innerHTML='<tr><td colspan="8"><div class="empty-state"><i class="ti ti-package"></i><p>Nessun materiale trovato.</p></div></td></tr>';return;}tb.innerHTML=list.map(m=>`<tr><td><span class="chip">${m.codice}</span></td><td><strong>${m.nome}</strong>${m.note?`<br><span style="color:var(--text3);font-size:11px">${m.note}</span>`:''}</td><td><span class="badge b-${m.tipo}">${m.tipo}</span></td><td>${m.locId?`<span class="badge b-loc"><i class="ti ti-map-pin" style="font-size:10px"></i> ${locPath(m.locId)}</span>`:'<span style="color:var(--text3);font-size:12px">—</span>'}<button class="btn btn-sm btn-icon" onclick="apriEditPos(${m.id})" style="margin-left:4px"><i class="ti ti-edit"></i></button></td><td>${m.um}</td><td>${fmtEur(m.costo)}</td><td>${m.minimo}</td><td><button class="btn btn-sm btn-icon btn-danger" onclick="elimMat(${m.id})"><i class="ti ti-trash"></i></button></td></tr>`).join('');}
+
+// ---- CARICO ----
+function renderCarico(){const sel=document.getElementById('carico-mat');sel.innerHTML='<option value="">Seleziona...</option>'+db.materiali.map(m=>`<option value="${m.id}">${m.codice} — ${m.nome}</option>`).join('');const tb=document.getElementById('carichi-tbody');const list=[...db.carichi].sort((a,b)=>b.data.localeCompare(a.data));if(!list.length){tb.innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Nessun carico.</td></tr>';return;}tb.innerHTML=list.map(c=>{const mat=db.materiali.find(m=>m.id==c.matId);return`<tr><td style="white-space:nowrap;font-size:12px">${fmtDate(c.data)}</td><td>${mat?mat.nome:'?'}</td><td>${c.qta}</td><td>${fmtEur(c.costo)}</td><td>${fmtEur(c.qta*c.costo)}</td><td>${c.fornitore||'—'}</td><td>${c.ddt||'—'}</td></tr>`;}).join('');}
+
+// ---- MOVIMENTI ----
+function renderMovimenti(){const q=(document.getElementById('search-mov')||{value:''}).value.toLowerCase(),tf=(document.getElementById('filter-mov-tipo')||{value:''}).value;const list=[...db.movimenti].sort((a,b)=>b.data.localeCompare(a.data)).filter(m=>{if(tf&&m.tipo!==tf)return false;const mat=db.materiali.find(x=>x.id==m.matId);return!q||[(mat?mat.nome:''),m.tecnico,m.cantiere,m.zona].join(' ').toLowerCase().includes(q);});const tb=document.getElementById('mov-tbody');if(!list.length){tb.innerHTML='<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--text3)">Nessun movimento.</td></tr>';return;}tb.innerHTML=list.map(m=>{const mat=db.materiali.find(x=>x.id==m.matId),stato=m.tipo==='uscita'?(!m.rientrato?'<span class="badge b-fuori">Fuori</span>':'<span class="badge b-ok">Rientrato</span>'):'—',rBtn=m.tipo==='uscita'&&!m.rientrato?`<button class="btn btn-sm" onclick="apriRientro(${m.id})">Rientro</button>`:'';return`<tr><td style="white-space:nowrap;font-size:12px">${fmtDate(m.data)}</td><td>${mat?mat.nome:'?'}</td><td><span class="badge b-${m.tipo}">${m.tipo}</span></td><td>${m.qta}</td><td>${m.tecnico||'—'}</td><td>${m.cantiere||'—'}</td><td>${m.zona||'—'}</td><td>${stato}</td><td>${rBtn}</td></tr>`;}).join('');}
+
+// ---- USCITA ----
+function renderUscita(){const sel=document.getElementById('usc-mat');sel.innerHTML='<option value="">Seleziona...</option>'+db.materiali.map(m=>`<option value="${m.id}">${m.codice} — ${m.nome} [disp: ${giacenza(m.id)} ${m.um}]</option>`).join('');const tb=document.getElementById('fuori-tbody');const fuori=db.movimenti.filter(m=>m.tipo==='uscita'&&!m.rientrato);if(!fuori.length){tb.innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Nessuno strumento fuori magazzino.</td></tr>';return;}tb.innerHTML=fuori.map(m=>{const mat=db.materiali.find(x=>x.id==m.matId);return`<tr><td>${mat?mat.nome:'?'}</td><td style="font-size:12px">${mat&&mat.locId?locPath(mat.locId):'—'}</td><td>${m.qta}</td><td>${m.tecnico||'—'}</td><td>${m.cantiere||'—'}</td><td style="white-space:nowrap;font-size:12px">${fmtDate(m.data)}</td><td><button class="btn btn-sm" onclick="apriRientro(${m.id})">Rientro</button></td></tr>`;}).join('');}
+
+// ---- MODALS ----
+function openModal(id){if(id==='modal-loc'){const sel=document.getElementById('loc-parent');sel.innerHTML='<option value="">— Livello radice —</option>'+allLocFlat().map(l=>`<option value="${l.id}">${l.label}</option>`).join('');}if(id==='modal-mat')populateLocSelect('nm-loc',false);document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openLocModal(){openModal('modal-loc');}
+function openMatModal(){openModal('modal-mat');}
+function populateLocSelect(selId,addEmpty){const sel=document.getElementById(selId);if(!sel)return;const cur=sel.value;sel.innerHTML=(addEmpty?'<option value="">Tutte le posizioni</option>':'<option value="">— Nessuna posizione —</option>')+allLocFlat().map(l=>`<option value="${l.id}">${l.label}</option>`).join('');if(cur)sel.value=cur;}
+
+async function salvaLoc(){const nome=document.getElementById('loc-nome').value.trim();if(!nome){alert('Inserisci il nome.');return;}const pv=document.getElementById('loc-parent').value;const obj={id:uid(),tipo:document.getElementById('loc-tipo').value,codice:document.getElementById('loc-codice').value.trim(),nome,desc:document.getElementById('loc-desc').value.trim(),parentId:pv?parseInt(pv):null};db.ubicazioni.push(obj);save();await sheetsPost('append','Ubicazioni',obj);closeModal('modal-loc');['loc-codice','loc-nome','loc-desc'].forEach(i=>document.getElementById(i).value='');renderUbicazioni();}
+function elimLoc(id){if(db.materiali.some(m=>m.locId==id)){alert('Ci sono materiali in questa ubicazione.');return;}if(db.ubicazioni.some(l=>l.parentId==id)){alert('Ci sono sotto-ubicazioni da eliminare prima.');return;}if(!confirm('Eliminare?'))return;db.ubicazioni=db.ubicazioni.filter(l=>l.id!=id);save();sheetsPost('delete','Ubicazioni',null,id);renderUbicazioni();}
+async function salvaMateriale(){const nome=document.getElementById('nm-nome').value.trim();if(!nome){alert('Inserisci il nome.');return;}const lv=document.getElementById('nm-loc').value;const obj={id:uid(),codice:document.getElementById('nm-codice').value.trim()||'MAT-'+String(db.nextId).padStart(3,'0'),nome,tipo:document.getElementById('nm-tipo').value,locId:lv?parseInt(lv):null,um:document.getElementById('nm-um').value.trim()||'pz',costo:parseFloat(document.getElementById('nm-costo').value)||0,minimo:parseInt(document.getElementById('nm-minimo').value)||0,note:document.getElementById('nm-note').value.trim()};db.materiali.push(obj);save();await sheetsPost('append','Materiali',obj);closeModal('modal-mat');['nm-codice','nm-nome','nm-note'].forEach(i=>document.getElementById(i).value='');document.getElementById('nm-loc').value='';renderMateriali();}
+function elimMat(id){if(!confirm('Eliminare?'))return;db.materiali=db.materiali.filter(m=>m.id!=id);save();sheetsPost('delete','Materiali',null,id);renderMateriali();}
+function apriEditPos(matId){const mat=db.materiali.find(m=>m.id==matId);if(!mat)return;document.getElementById('edit-pos-name').textContent=mat.nome;document.getElementById('edit-pos-mat-id').value=matId;populateLocSelect('edit-pos-loc',false);document.getElementById('edit-pos-loc').value=mat.locId||'';openModal('modal-edit-pos');}
+async function salvaEditPos(){const id=parseInt(document.getElementById('edit-pos-mat-id').value);const mat=db.materiali.find(m=>m.id==id);if(!mat)return;const v=document.getElementById('edit-pos-loc').value;mat.locId=v?parseInt(v):null;save();await sheetsPost('update','Materiali',mat);closeModal('modal-edit-pos');renderMateriali();}
+
+async function salvaCarico(){const matId=parseInt(document.getElementById('carico-mat').value);const qta=parseInt(document.getElementById('carico-qta').value);if(!matId||!qta||qta<1){alert('Seleziona materiale e quantità.');return;}const mat=db.materiali.find(m=>m.id==matId);const cv=document.getElementById('carico-costo').value;const obj={id:uid(),data:now(),matId,qta,costo:cv!==''?parseFloat(cv):(mat?mat.costo:0),fornitore:document.getElementById('carico-fornitore').value.trim(),ddt:document.getElementById('carico-ddt').value.trim(),note:document.getElementById('carico-note').value.trim()};db.carichi.push(obj);save();await sheetsPost('append','Carichi',obj);resetCarico();renderCarico();alert('Carico registrato!');}
+function resetCarico(){document.getElementById('carico-mat').value='';document.getElementById('carico-qta').value=1;['carico-costo','carico-fornitore','carico-ddt','carico-note'].forEach(i=>document.getElementById(i).value='');}
+function onUscitaMatChange(){const id=parseInt(document.getElementById('usc-mat').value);const mat=db.materiali.find(m=>m.id==id);const box=document.getElementById('usc-tipo-box');if(mat){box.style.display='block';document.getElementById('usc-tipo').value=mat.tipo==='consumabile'?'consumo':'uscita';}else box.style.display='none';}
+async function salvaUscita(){const matId=parseInt(document.getElementById('usc-mat').value);const qta=parseInt(document.getElementById('usc-qta').value);const tecnico=document.getElementById('usc-tecnico').value.trim();if(!matId||!qta||qta<1){alert('Seleziona materiale e quantità.');return;}if(!tecnico){alert('Inserisci il nome del tecnico.');return;}const g=giacenza(matId);if(qta>g){alert('Giacenza insufficiente. Disponibili: '+g);return;}const tipo=document.getElementById('usc-tipo').value;const obj={id:uid(),data:now(),matId,tipo,qta,tecnico,cantiere:document.getElementById('usc-cantiere').value.trim(),zona:document.getElementById('usc-zona').value.trim(),note:document.getElementById('usc-note').value.trim(),rientrato:tipo==='consumo'};db.movimenti.push(obj);save();await sheetsPost('append','Movimenti',obj);resetUscita();renderUscita();alert('Uscita registrata!');}
+function resetUscita(){document.getElementById('usc-mat').value='';document.getElementById('usc-qta').value=1;['usc-tecnico','usc-cantiere','usc-zona','usc-note'].forEach(i=>document.getElementById(i).value='');document.getElementById('usc-tipo-box').style.display='none';}
+function apriRientro(movId){const m=db.movimenti.find(x=>x.id==movId);if(!m)return;const mat=db.materiali.find(x=>x.id==m.matId);document.getElementById('rientro-info').innerHTML=`<strong>${mat?mat.nome:'?'}</strong> — ${fmtDate(m.data)}<br>Tecnico: ${m.tecnico||'—'} · Cantiere: ${m.cantiere||'—'}<br>Qtà uscita: <strong>${m.qta} ${mat?mat.um:''}</strong>`;document.getElementById('rientro-qta').value=m.qta;document.getElementById('rientro-qta').max=m.qta;document.getElementById('rientro-mov-id').value=movId;document.getElementById('rientro-note').value='';openModal('modal-rientro');}
+async function salvaRientro(){const movId=parseInt(document.getElementById('rientro-mov-id').value);const qta=parseInt(document.getElementById('rientro-qta').value);const m=db.movimenti.find(x=>x.id==movId);if(!m||!qta)return;m.rientrato=true;const obj={id:uid(),data:now(),matId:m.matId,tipo:'rientro',qta,tecnico:m.tecnico,cantiere:m.cantiere,zona:m.zona,note:document.getElementById('rientro-note').value.trim(),rifUscitaId:movId};db.movimenti.push(obj);save();await Promise.all([sheetsPost('update','Movimenti',m),sheetsPost('append','Movimenti',obj)]);closeModal('modal-rientro');renderCurrent();alert('Rientro registrato!');}
+
+// ===== AI CARICO =====
+let selectedFile=null,righeData=[];
+const AI_PROMPT=`Sei un assistente per magazzino materiale elettrico. Analizza questo documento (fattura, DDT o bolla) ed estrai i dati in JSON.
+Rispondi SOLO con un oggetto JSON valido, senza testo aggiuntivo, senza backtick.
+Formato:
+{"fornitore":"Nome fornitore","numero_doc":"Numero fattura/DDT","data_doc":"GG/MM/AAAA","tipo_doc":"Fattura o DDT o Ordine","righe":[{"descrizione":"Descrizione materiale","qta":1,"um":"pz","prezzo_unitario":0.00}],"note":"eventuali note"}
+Se un campo manca usa "" o 0. Estrai TUTTE le righe di materiale.`;
+
+function onDrag(e,over){e.preventDefault();document.getElementById('dropzone').classList.toggle('drag-over',over);}
+function onDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)setFile(f);}
+function onFileSelect(e){const f=e.target.files[0];if(f)setFile(f);}
+function setFile(f){const ok=['application/pdf','image/jpeg','image/png','image/webp'];if(!ok.includes(f.type)&&!f.name.match(/\.(pdf|jpg|jpeg|png|webp)$/i)){alert('Formato non supportato. Usa PDF, JPG, PNG o WEBP.');return;}selectedFile=f;const kb=(f.size/1024).toFixed(0);const icon=f.type==='application/pdf'?'ti-file-type-pdf':'ti-photo';document.getElementById('file-preview-wrap').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius);margin-top:12px"><i class="ti ${icon}" style="font-size:22px;color:var(--blue)"></i><div style="flex:1"><div style="font-size:13px;font-weight:600">${f.name}</div><div style="font-size:11px;color:var(--text3)">${kb} KB</div></div><span class="badge b-ok"><i class="ti ti-check" style="font-size:10px"></i> Pronto</span></div>`;document.getElementById('step1-actions').style.display='flex';}
+
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=()=>rej(new Error('Lettura fallita'));r.readAsDataURL(file);});}
+
+async function startAnalysis(){
+  if(!selectedFile){alert('Seleziona prima un file.');return;}
+  goAIStep(2);
+  const msgs=['Lettura documento in corso...','Identificazione fornitore e numero documento...','Estrazione articoli e quantità...','Analisi prezzi in corso...'];
+  let mi=0;const iv=setInterval(()=>{mi=(mi+1)%msgs.length;const el=document.getElementById('loading-msg');if(el)el.textContent=msgs[mi];},1800);
+  try{
+    let content;
+    const b64=await fileToBase64(selectedFile);
+    if(selectedFile.type==='application/pdf'){
+      content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:AI_PROMPT}];
+    } else {
+      content=[{type:'image',source:{type:'base64',media_type:selectedFile.type||'image/jpeg',data:b64}},{type:'text',text:AI_PROMPT}];
+    }
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content}]})});
+    const data=await resp.json();
+    clearInterval(iv);
+    parseAndShow(data.content?.find(b=>b.type==='text')?.text||'');
+  }catch(e){clearInterval(iv);document.getElementById('loading-msg').textContent='Errore durante l\'analisi.';setTimeout(()=>goAIStep(1),2000);}
+}
+
+function parseAndShow(txt){
+  let p;
+  try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}
+  catch(e){p={fornitore:'',numero_doc:'',data_doc:'',tipo_doc:'DDT',righe:[{descrizione:'',qta:1,um:'pz',prezzo_unitario:0}],note:'Lettura automatica non riuscita — compila manualmente.'};}
+  document.getElementById('r-fornitore').value=p.fornitore||'';
+  document.getElementById('r-ddt').value=p.numero_doc||'';
+  document.getElementById('r-data-doc').value=p.data_doc||'';
+  document.getElementById('r-tipo-doc').value=p.tipo_doc||'DDT';
+  righeData=p.righe||[];renderRighe();
+  document.getElementById('ai-extracted-summary').innerHTML=`<span class="badge b-ai" style="margin-bottom:6px;display:inline-flex"><i class="ti ti-sparkles" style="font-size:11px"></i> Estratto dall'AI</span><br><strong>${p.tipo_doc||'Documento'}</strong> n° ${p.numero_doc||'—'} del ${p.data_doc||'—'}<br>Fornitore: <strong>${p.fornitore||'—'}</strong> · ${righeData.length} riga/e trovata/e${p.note?`<br><span style="color:var(--text3)">${p.note}</span>`:''}`;
+  const aw=document.getElementById('ai-warn');
+  if(!p.fornitore||!righeData.length){aw.style.display='block';aw.innerHTML='<div class="alert-warn"><i class="ti ti-alert-triangle"></i><div>Alcuni dati non sono stati estratti. Controlla e completa prima di continuare.</div></div>';}
+  else aw.style.display='none';
+  goAIStep(3);
+}
+
+function renderRighe(){const con=document.getElementById('righe-container');if(!righeData.length){con.innerHTML='<div style="padding:14px;text-align:center;font-size:13px;color:var(--text3)">Nessuna riga. Clicca "Aggiungi".</div>';return;}con.innerHTML=righeData.map((r,i)=>`<div class="riga-mat-row"><input type="text" value="${esc(r.descrizione)}" onchange="righeData[${i}].descrizione=this.value" placeholder="Descrizione"><input type="number" value="${r.qta}" min="0" step="any" onchange="righeData[${i}].qta=parseFloat(this.value)||0" style="text-align:right"><input type="text" value="${esc(r.um)}" onchange="righeData[${i}].um=this.value" placeholder="pz"><input type="number" value="${r.prezzo_unitario}" min="0" step="0.01" onchange="righeData[${i}].prezzo_unitario=parseFloat(this.value)||0" style="text-align:right"><button class="btn btn-sm btn-icon btn-danger" onclick="removeRiga(${i})"><i class="ti ti-trash"></i></button></div>`).join('');}
+function esc(s){return(s||'').replace(/"/g,'&quot;');}
+function addRiga(){righeData.push({descrizione:'',qta:1,um:'pz',prezzo_unitario:0});renderRighe();}
+function removeRiga(i){righeData.splice(i,1);renderRighe();}
+
+function renderAbbinamento(){
+  const fornitore=document.getElementById('r-fornitore').value,ddt=document.getElementById('r-ddt').value,tipoDoc=document.getElementById('r-tipo-doc').value;
+  document.getElementById('confirm-info').innerHTML=`<strong>${tipoDoc}</strong> n° ${ddt||'—'} — Fornitore: <strong>${fornitore||'—'}</strong> · ${righeData.length} articoli`;
+  const opts=db.materiali.map(m=>`<option value="${m.id}">${m.codice} — ${m.nome}</option>`).join('');
+  document.getElementById('abbinamento-container').innerHTML=righeData.map((r,i)=>`<div class="abbina-row"><div style="font-size:13px;font-weight:600;margin-bottom:6px">${r.descrizione||'Articolo '+(i+1)} <span style="font-weight:400;color:var(--text3);font-size:12px">· ${r.qta} ${r.um} · ${parseFloat(r.prezzo_unitario).toFixed(2)}€/u · tot. ${(r.qta*r.prezzo_unitario).toFixed(2)}€</span></div><select id="abbina-${i}"><option value="__nuovo__">⊕ Crea nuovo materiale da questa descrizione</option><option value="__skip__">— Salta questa riga</option>${opts}</select></div>`).join('');
+}
+
+async function confermaCaricoAI(){
+  const fornitore=document.getElementById('r-fornitore').value.trim(),ddt=document.getElementById('r-ddt').value.trim();
+  let registrati=0;
+  for(let i=0;i<righeData.length;i++){
+    const r=righeData[i],sel=document.getElementById('abbina-'+i)?.value;
+    if(sel==='__skip__')continue;
+    let matId;
+    if(sel==='__nuovo__'){const nm={id:uid(),codice:'MAT-'+String(db.nextId).padStart(3,'0'),nome:r.descrizione||'Nuovo materiale',tipo:'consumabile',locId:null,um:r.um||'pz',costo:r.prezzo_unitario||0,minimo:0,note:'Creato da '+ddt};db.materiali.push(nm);await sheetsPost('append','Materiali',nm);matId=nm.id;}
+    else matId=parseInt(sel);
+    const obj={id:uid(),data:now(),matId,qta:Math.round(r.qta)||1,costo:r.prezzo_unitario||0,fornitore,ddt,note:'Importato da documento AI'};
+    db.carichi.push(obj);await sheetsPost('append','Carichi',obj);
+    registrati++;
+  }
+  save();
+  document.getElementById('success-summary').textContent=`${registrati} articolo/i caricati da ${ddt||'documento'} (${fornitore||'fornitore non specificato'})`;
+  goAIStep(5);
+}
+
+function goAIStep(n){
+  for(let i=1;i<=5;i++)document.getElementById('aistep'+i).classList.toggle('active',i===n);
+  const ps=['ps1','ps2','ps3','ps4'];
+  ps.forEach((id,idx)=>{const el=document.getElementById(id);if(!el)return;el.className='pstep'+(idx+1<n?' done':idx+1===n?' active':'');});
+  if(n===4)renderAbbinamento();
+}
+
+function resetAI(){selectedFile=null;righeData=[];document.getElementById('file-preview-wrap').innerHTML='';document.getElementById('step1-actions').style.display='none';document.getElementById('fileInput').value='';goAIStep(1);}
+
+// ===== EXPORT EXCEL =====
+function exportExcel(){if(!window.XLSX){alert('Libreria non caricata.');return;}const wb=XLSX.utils.book_new();const scorte=db.materiali.map(m=>({'Codice':m.codice,'Nome':m.nome,'Tipo':m.tipo,'Posizione':locPath(m.locId)||'—','U.M.':m.um,'Giacenza':giacenza(m.id),'Fuori':fuoriMag(m.id),'Scorta min.':m.minimo,'Costo €':m.costo,'Valore €':(giacenza(m.id)*m.costo).toFixed(2),'Stato':giacenza(m.id)<=0?'Esaurito':giacenza(m.id)<m.minimo?'Sotto scorta':'OK'}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(scorte),'Scorte');const ubicSheet=db.ubicazioni.map(l=>({'Codice':l.codice,'Nome':l.nome,'Tipo':l.tipo,'Descrizione':l.desc||'','Percorso':locPath(l.id)}));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ubicSheet),'Ubicazioni');const movSheet=[...db.movimenti].sort((a,b)=>b.data.localeCompare(a.data)).map(m=>{const mat=db.materiali.find(x=>x.id==m.matId);return{'Data':fmtDate(m.data),'Materiale':mat?mat.nome:'?','Tipo':m.tipo,'Qtà':m.qta,'Tecnico':m.tecnico||'','Cantiere':m.cantiere||'','Zona':m.zona||'','Stato':m.tipo==='uscita'?(m.rientrato?'Rientrato':'Fuori'):'—'};});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(movSheet),'Movimenti');const carSheet=[...db.carichi].sort((a,b)=>b.data.localeCompare(a.data)).map(c=>{const mat=db.materiali.find(m=>m.id==c.matId);return{'Data':fmtDate(c.data),'Materiale':mat?mat.nome:'?','Qtà':c.qta,'Costo/u':c.costo,'Totale':(c.qta*c.costo).toFixed(2),'Fornitore':c.fornitore||'','DDT':c.ddt||''};});XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(carSheet),'Carichi');XLSX.writeFile(wb,'magazzino_elettrico_'+new Date().toLocaleDateString('it-IT').replace(/\//g,'-')+'.xlsx');}
+
+// ===== INIT =====
+load();renderDashboard();
+if(useSheets)syncAll();
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+</script>
+</body>
+</html>
